@@ -89,15 +89,14 @@
             </div>
             <div>
                 <h1 class="font-bold text-base text-slate-900 dark:text-white leading-tight flex items-center gap-2">
-                    Square Grid Sprite Animator
+                    Pixel Art Sprite Animator
                     <span id="gridTypeBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30">3x3 (8 Frames)</span>
                 </h1>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400">1×1 to 5×5 Grids • LocalStorage • APNG & Transparent GIF Exporter</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">1×1 to 5×5 Grids • APNG & Transparent GIF Exporter</p>
             </div>
         </div>
 
         <div class="flex items-center gap-2 text-xs">
-            <!-- Theme Toggle Button -->
             <button id="btnThemeToggle" class="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 font-medium transition flex items-center justify-center shadow-sm" title="Toggle Light/Dark Theme">
                 <i id="themeIcon" class="fa-solid fa-sun text-sm"></i>
             </button>
@@ -108,26 +107,21 @@
                 <input type="file" id="fileInput" accept="image/*" class="hidden">
             </label>
 
-            <!-- Sprite Preset Selector -->
             <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1">
                 <i class="fa-solid fa-list-check text-amber-500 dark:text-amber-400 text-[11px]"></i>
-                <select id="presetSelect" class="bg-transparent text-slate-700 dark:text-slate-200 text-xs focus:outline-none cursor-pointer">
-                </select>
+                <select id="presetSelect" class="bg-transparent text-slate-700 dark:text-slate-200 text-xs focus:outline-none cursor-pointer"></select>
             </div>
 
-            <!-- APNG Export -->
             <button id="btnExportAPNG" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-emerald-700/20" title="Export as Animated PNG">
                 <i class="fa-solid fa-file-image"></i>
                 <span>Export APNG</span>
             </button>
 
-            <!-- GIF Export -->
             <button id="btnExportGIF" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-amber-600/20" title="Export as Transparent Animated GIF">
                 <i class="fa-solid fa-file-video"></i>
                 <span>Export GIF</span>
             </button>
 
-            <!-- Export CSS Snippet -->
             <button id="btnExportCode" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-medium transition flex items-center gap-1.5">
                 <i class="fa-solid fa-code text-indigo-500 dark:text-indigo-400"></i>
                 <span class="hidden lg:inline">CSS</span>
@@ -136,11 +130,8 @@
     </header>
 
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-
         <!-- Controls Sidebar -->
         <aside class="w-full md:w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto">
-            
-            <!-- Sprite Sheet Upload & Drop Zone -->
             <div class="p-3.5 border-b border-slate-200 dark:border-slate-800">
                 <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-2 flex items-center justify-between">
                     <span class="flex items-center gap-1.5">
@@ -184,7 +175,6 @@
                     </div>
                 </div>
 
-                <!-- Margin / Padding Crop Adjustments -->
                 <div class="grid grid-cols-2 gap-2 text-xs pt-1">
                     <div>
                         <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
@@ -273,14 +263,12 @@
 
         <!-- Center Stage -->
         <section class="flex-1 bg-slate-200/50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden group">
-            
             <div class="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
                 <div class="pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-800 text-xs font-mono text-slate-700 dark:text-slate-300 shadow-xl flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>Frame: <strong id="currentFrameBadge" class="text-emerald-600 dark:text-emerald-400">1 / 8</strong></span>
                 </div>
 
-                <!-- Zoom Controls (Defaults to 50%) -->
                 <div class="pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 flex items-center gap-1 shadow-xl">
                     <button id="btnZoomOut" class="p-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
                     <span id="zoomText" class="font-mono text-[11px] px-1 text-indigo-600 dark:text-indigo-400 font-bold">50%</span>
@@ -311,7 +299,6 @@
 
         <!-- Slicer & Extracted Frames Sidebar -->
         <aside class="w-full md:w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto p-3.5 gap-3.5">
-            
             <div class="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
                 <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
                     <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
@@ -336,8 +323,7 @@
                     <span id="activeCountBadge" class="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">8 Frames</span>
                 </h2>
 
-                <div id="framesListContainer" class="grid grid-cols-4 gap-2 overflow-y-auto max-h-[220px] p-1">
-                </div>
+                <div id="framesListContainer" class="grid grid-cols-4 gap-2 overflow-y-auto max-h-[220px] p-1"></div>
             </div>
         </aside>
     </main>
@@ -672,14 +658,14 @@
             const targetG = state.chromaColor.g;
             const targetB = state.chromaColor.b;
             const tol = (state.chromaTolerance / 100) * 255;
+            const tolSq = tol * tol;
 
             for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
+                const dr = data[i] - targetR;
+                const dg = data[i + 1] - targetG;
+                const db = data[i + 2] - targetB;
 
-                const dist = Math.sqrt((r - targetR)**2 + (g - targetG)**2 + (b - targetB)**2);
-                if (dist < tol) {
+                if ((dr * dr + dg * dg + db * db) < tolSq) {
                     data[i + 3] = 0;
                 }
             }
@@ -707,7 +693,6 @@
             state.frameCanvases = [];
 
             let frameIndex = 0;
-            // Top-left to bottom-right order (Row-major)
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     if (frameIndex >= state.totalFrames) break;
@@ -744,47 +729,66 @@
                 state.currentFrame = 0;
             }
 
-            renderThumbnailsUI();
+            buildThumbnailsUI();
             updateCanvasDimensions();
             updateGridBadge();
         }
 
-        function renderThumbnailsUI() {
+        // Build thumbnail DOM elements once during sheet slicing
+        function buildThumbnailsUI() {
             const container = document.getElementById('framesListContainer');
             container.innerHTML = '';
 
             document.getElementById('activeCountBadge').textContent = `${state.frameCanvases.length} Frames`;
 
             state.frameCanvases.forEach((fCanvas, idx) => {
-                const isActive = idx === state.currentFrame;
-
                 const card = document.createElement('div');
-                card.className = `aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden ${
-                    isActive ? 'border-indigo-500 bg-indigo-600/20 shadow-md scale-105' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
-                } checkerboard-bg-sm`;
+                card.id = `thumb-card-${idx}`;
+                card.className = `aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden checkerboard-bg-sm ${
+                    idx === state.currentFrame 
+                        ? 'border-indigo-500 bg-indigo-600/20 shadow-md scale-105' 
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                }`;
 
-                const img = document.createElement('img');
-                img.src = fCanvas.toDataURL();
-                img.className = 'pixelated w-full h-full object-contain p-1 pointer-events-none';
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = fCanvas.width;
+                thumbCanvas.height = fCanvas.height;
+                thumbCanvas.className = 'pixelated w-full h-full object-contain p-1 pointer-events-none';
+                const tCtx = thumbCanvas.getContext('2d');
+                tCtx.drawImage(fCanvas, 0, 0);
 
                 const badge = document.createElement('span');
                 badge.className = 'absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400';
                 badge.textContent = `#${idx + 1}`;
 
-                card.appendChild(img);
+                card.appendChild(thumbCanvas);
                 card.appendChild(badge);
 
                 card.addEventListener('click', () => {
                     state.currentFrame = idx;
                     state.isPlaying = false;
                     updatePlayButtonUI();
-                    renderThumbnailsUI();
+                    highlightActiveThumbnail();
                 });
 
                 container.appendChild(card);
             });
 
             document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
+        }
+
+        // Lightweight active frame UI updater (no layout recalculations or canvas re-encodings)
+        function highlightActiveThumbnail() {
+            document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
+            const container = document.getElementById('framesListContainer');
+            const cards = container.children;
+            for (let i = 0; i < cards.length; i++) {
+                if (i === state.currentFrame) {
+                    cards[i].className = 'aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden checkerboard-bg-sm border-indigo-500 bg-indigo-600/20 shadow-md scale-105';
+                } else {
+                    cards[i].className = 'aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden checkerboard-bg-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700';
+                }
+            }
         }
 
         function updateCanvasDimensions() {
@@ -802,7 +806,6 @@
             animCanvas.style.height = `${fh * displayScale}px`;
         }
 
-        // Precise Timing Loop supporting high FPS
         let lastTime = 0;
         let accumulator = 0;
 
@@ -817,7 +820,6 @@
                 if (state.isPlaying && state.frameCanvases.length > 0) {
                     accumulator += delta;
 
-                    // Prevent frame burst on tab switch
                     if (accumulator > 1000) accumulator = frameDuration;
 
                     let frameAdvanced = false;
@@ -837,8 +839,7 @@
                     }
 
                     if (frameAdvanced) {
-                        document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
-                        renderThumbnailsUI();
+                        highlightActiveThumbnail();
                     }
                 } else {
                     accumulator = 0;
@@ -892,10 +893,8 @@
         }
 
         function setupEventListeners() {
-            // Theme Switcher
             document.getElementById('btnThemeToggle').addEventListener('click', toggleTheme);
 
-            // File input & Drag-and-drop
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length > 0) handleImageFile(e.target.files[0]);
             });
@@ -914,12 +913,10 @@
                 if (e.dataTransfer.files.length > 0) handleImageFile(e.dataTransfer.files[0]);
             });
 
-            // Preset Selector
             presetSelect.addEventListener('change', (e) => {
                 loadPreset(parseInt(e.target.value));
             });
 
-            // Grid size selection (1x1 to 5x5)
             document.getElementById('gridDimSelect').addEventListener('change', (e) => {
                 state.gridSize = parseInt(e.target.value);
                 const maxF = state.gridSize * state.gridSize;
@@ -934,7 +931,6 @@
                 saveSettings();
             });
 
-            // Total active frames
             document.getElementById('frameCountRange').addEventListener('input', (e) => {
                 state.totalFrames = parseInt(e.target.value);
                 document.getElementById('frameCountText').textContent = `${state.totalFrames} Frames`;
@@ -942,7 +938,6 @@
                 saveSettings();
             });
 
-            // Chroma Key Controls
             document.getElementById('chromaKeyToggle').addEventListener('change', (e) => {
                 state.chromaEnabled = e.target.checked;
                 sliceSpriteSheet();
@@ -965,7 +960,6 @@
                 saveSettings();
             });
 
-            // Padding Sliders
             document.getElementById('padXRange').addEventListener('input', (e) => {
                 state.padX = parseInt(e.target.value);
                 document.getElementById('padXVal').textContent = `${state.padX}px`;
@@ -980,21 +974,18 @@
                 saveSettings();
             });
 
-            // FPS (1 to 60)
             document.getElementById('fpsRange').addEventListener('input', (e) => {
                 state.fps = parseInt(e.target.value);
                 document.getElementById('fpsValueText').textContent = `${state.fps} FPS`;
                 saveSettings();
             });
 
-            // Traversal Toggle
             document.getElementById('traverseToggle').addEventListener('change', (e) => {
                 state.traverse = e.target.checked;
                 document.getElementById('groundLine').classList.toggle('hidden', !state.traverse);
                 saveSettings();
             });
 
-            // Direction Buttons
             document.getElementById('btnFlipRight').addEventListener('click', () => {
                 state.flipLeft = false;
                 updateFacingButtonsUI();
@@ -1006,7 +997,6 @@
                 saveSettings();
             });
 
-            // Playback controls
             document.getElementById('btnPlayPause').addEventListener('click', () => {
                 state.isPlaying = !state.isPlaying;
                 updatePlayButtonUI();
@@ -1016,17 +1006,16 @@
                 state.isPlaying = false;
                 updatePlayButtonUI();
                 state.currentFrame = (state.currentFrame - 1 + state.frameCanvases.length) % state.frameCanvases.length;
-                renderThumbnailsUI();
+                highlightActiveThumbnail();
             });
 
             document.getElementById('btnNextFrame').addEventListener('click', () => {
                 state.isPlaying = false;
                 updatePlayButtonUI();
                 state.currentFrame = (state.currentFrame + 1) % state.frameCanvases.length;
-                renderThumbnailsUI();
+                highlightActiveThumbnail();
             });
 
-            // Zoom controls
             document.getElementById('btnZoomIn').addEventListener('click', () => {
                 state.zoom = Math.min(5.0, +(state.zoom + 0.25).toFixed(2));
                 updateZoomUI();
@@ -1038,7 +1027,6 @@
                 saveSettings();
             });
 
-            // Reset Settings
             document.getElementById('btnResetSettings').addEventListener('click', () => {
                 localStorage.removeItem(STORAGE_KEY);
                 state = { ...defaultState, sourceImg: state.sourceImg, frameCanvases: state.frameCanvases };
@@ -1047,14 +1035,10 @@
                 showToast('Settings reset to defaults');
             });
 
-            // APNG Export Action
             document.getElementById('btnExportAPNG').addEventListener('click', exportToAPNG);
-
-            // GIF Export Action
             document.getElementById('btnExportGIF').addEventListener('click', exportToGIF);
-
-            // Export Modal & Clipboard
             document.getElementById('btnExportCode').addEventListener('click', openCodeExportModal);
+            
             document.querySelectorAll('.closeModal').forEach(b => {
                 b.addEventListener('click', () => {
                     document.getElementById('modalCodeExport').classList.add('hidden');
@@ -1102,7 +1086,6 @@
             }
         }
 
-        // Transparent GIF generation with Blob-Worker to bypass CDN CORS
         async function exportToGIF() {
             if (!state.frameCanvases.length) {
                 showToast('No frames available to export');
@@ -1115,7 +1098,6 @@
             const delay = Math.round(1000 / state.fps);
 
             try {
-                // Fetch worker source code and load via ObjectURL blob to bypass Web Worker origin restrictions
                 const workerResponse = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
                 const workerBlob = new Blob([await workerResponse.text()], { type: 'application/javascript' });
                 const workerUrl = URL.createObjectURL(workerBlob);
@@ -1130,7 +1112,6 @@
                 });
 
                 state.frameCanvases.forEach(canvas => {
-                    // Frame disposal: 2 restores background to keep transparency clean
                     gif.addFrame(canvas, { delay: delay, dispose: 2 });
                 });
 
