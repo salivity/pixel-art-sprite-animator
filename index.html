@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100 select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Sheet Animator & Exporter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- APNG & GIF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/upng-js/2.1.0/UPNG.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre, .font-mono { font-family: 'Fira Code', monospace; }
+        .pixelated {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+        .checkerboard-bg {
+            background-color: #0b0f19;
+            background-image: 
+                linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        .checkerboard-bg-sm {
+            background-color: #0b0f19;
+            background-image: 
+                linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 10px 10px;
+            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden bg-slate-950 text-slate-100">
+
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur shrink-0 px-4 py-2.5 flex items-center justify-between z-30">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20">
+                <i class="fa-solid fa-film"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base text-white leading-tight flex items-center gap-2">
+                    Square Grid Sprite Animator
+                    <span id="gridTypeBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">3x3 (8 Frames)</span>
+                </h1>
+                <p class="text-[11px] text-slate-400">1×1 to 5×5 Grids (Up to 25 Frames) • LocalStorage • APNG & GIF Exporter</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs">
+            <label class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition cursor-pointer shadow-md shadow-indigo-600/20 flex items-center gap-2">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Load File</span>
+                <input type="file" id="fileInput" accept="image/*" class="hidden">
+            </label>
+
+            <!-- Sprite Preset Selector (Populated from JSON array) -->
+            <div class="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1">
+                <i class="fa-solid fa-list-check text-amber-400 text-[11px]"></i>
+                <select id="presetSelect" class="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer">
+                    <!-- Populated dynamically via JSON array -->
+                </select>
+            </div>
+
+            <!-- APNG Export -->
+            <button id="btnExportAPNG" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-emerald-700/20" title="Export as Animated PNG">
+                <i class="fa-solid fa-file-image"></i>
+                <span>Export APNG</span>
+            </button>
+
+            <!-- GIF Export -->
+            <button id="btnExportGIF" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-amber-600/20" title="Export as Animated GIF">
+                <i class="fa-solid fa-file-video"></i>
+                <span>Export GIF</span>
+            </button>
+
+            <!-- Export CSS Snippet -->
+            <button id="btnExportCode" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition flex items-center gap-1.5">
+                <i class="fa-solid fa-code text-indigo-400"></i>
+                <span class="hidden lg:inline">CSS</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- Controls Sidebar -->
+        <aside class="w-full md:w-80 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto">
+            
+            <!-- Sprite Sheet Upload & Drop Zone -->
+            <div class="p-3.5 border-b border-slate-800">
+                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-image text-indigo-400"></i>
+                        Input Source
+                    </span>
+                    <span id="imageDimBadge" class="text-[10px] text-slate-500 font-mono">0x0 px</span>
+                </h2>
+
+                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-center transition cursor-pointer bg-slate-950/50 flex flex-col items-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-up text-xl text-indigo-400"></i>
+                    <p class="text-xs font-medium text-slate-300">Click or Drag & Drop Sheet</p>
+                    <p class="text-[10px] text-slate-500">Square Sheets (Up to 5x5 grid, 25 frames)</p>
+                </div>
+            </div>
+
+            <!-- Square Grid Controls -->
+            <div class="p-3.5 border-b border-slate-800 flex flex-col gap-3">
+                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-table-cells text-indigo-400"></i>
+                    Grid Dimensions (Square)
+                </h2>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Grid Size (N x N)</label>
+                        <select id="gridDimSelect" class="w-full bg-slate-950 text-slate-200 text-xs rounded-lg p-1.5 border border-slate-800 focus:outline-none cursor-pointer">
+                            <option value="1">1 x 1 (1 slot)</option>
+                            <option value="2">2 x 2 (4 slots)</option>
+                            <option value="3">3 x 3 (9 slots)</option>
+                            <option value="4">4 x 4 (16 slots)</option>
+                            <option value="5">5 x 5 (25 slots)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Active Frames</span>
+                            <span id="frameCountText" class="font-mono text-indigo-400 font-bold">8 Frames</span>
+                        </div>
+                        <input type="range" id="frameCountRange" min="1" max="25" value="8" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full mt-2">
+                    </div>
+                </div>
+
+                <!-- Margin / Padding Crop Adjustments -->
+                <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                    <div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Padding X</span>
+                            <span id="padXVal" class="font-mono text-slate-300">0px</span>
+                        </div>
+                        <input type="range" id="padXRange" min="0" max="40" value="0" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Padding Y</span>
+                            <span id="padYVal" class="font-mono text-slate-300">0px</span>
+                        </div>
+                        <input type="range" id="padYRange" min="0" max="40" value="0" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chroma Key / Green Screen Remover -->
+            <div class="p-3.5 border-b border-slate-800 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-emerald-400"></i>
+                        Chroma Key Removal
+                    </h2>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="chromaKeyToggle" checked class="sr-only peer">
+                        <div class="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Key Color</label>
+                        <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                            <input type="color" id="chromaColorInput" value="#00FF00" class="w-6 h-6 rounded cursor-pointer border-0 p-0 bg-transparent">
+                            <span id="chromaHexVal" class="font-mono text-[11px] text-slate-300">#00FF00</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                            <span>Tolerance</span>
+                            <span id="chromaTolVal" class="font-mono text-emerald-400 font-bold">40%</span>
+                        </div>
+                        <input type="range" id="chromaTolRange" min="1" max="90" value="40" class="accent-emerald-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full mt-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playback & Motion Settings -->
+            <div class="p-3.5 flex-1 flex flex-col gap-3">
+                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-play text-indigo-400"></i>
+                    Playback & Movement
+                </h2>
+
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400">Animation Speed</span>
+                        <span id="fpsValueText" class="text-indigo-400 font-bold font-mono">10 FPS</span>
+                    </div>
+                    <input type="range" id="fpsRange" min="1" max="30" value="10" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
+                    <div>
+                        <div class="font-medium text-slate-200">Stage Traversal Mode</div>
+                        <div class="text-[10px] text-slate-400">Walk horizontally across stage</div>
+                    </div>
+                    <input type="checkbox" id="traverseToggle" class="accent-indigo-500 w-4 h-4 rounded">
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
+                    <span class="text-slate-300">Facing Direction</span>
+                    <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                        <button id="btnFlipRight" class="px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-medium">Right</button>
+                        <button id="btnFlipLeft" class="px-2 py-0.5 hover:bg-slate-800 text-slate-400 text-[11px]">Left</button>
+                    </div>
+                </div>
+
+                <button id="btnResetSettings" class="mt-2 text-slate-400 hover:text-rose-400 text-xs py-1 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Reset Defaults
+                </button>
+            </div>
+        </aside>
+
+        <!-- Center Stage -->
+        <section class="flex-1 bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden group">
+            
+            <div class="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
+                <div class="pointer-events-auto bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 shadow-xl flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Frame: <strong id="currentFrameBadge" class="text-emerald-400">1 / 8</strong></span>
+                </div>
+
+                <!-- Zoom Controls (Defaults to 50%) -->
+                <div class="pointer-events-auto bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg border border-slate-800 text-xs text-slate-300 flex items-center gap-1 shadow-xl">
+                    <button id="btnZoomOut" class="p-1 px-2 hover:bg-slate-800 rounded transition" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                    <span id="zoomText" class="font-mono text-[11px] px-1 text-indigo-400 font-bold">50%</span>
+                    <button id="btnZoomIn" class="p-1 px-2 hover:bg-slate-800 rounded transition" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+
+            <!-- Transparency Checkerboard Stage (No background presets) -->
+            <div id="stageViewport" class="relative w-full h-full max-h-[460px] rounded-2xl checkerboard-bg border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl transition-all">
+                <canvas id="animCanvas" class="pixelated block cursor-pointer"></canvas>
+                <div id="groundLine" class="absolute bottom-10 left-0 right-0 h-0.5 bg-indigo-500/30 border-t border-dashed border-indigo-400/50 hidden pointer-events-none"></div>
+            </div>
+
+            <!-- Playback Bar -->
+            <div class="mt-4 flex items-center gap-3 bg-slate-900/90 backdrop-blur px-4 py-2 rounded-2xl border border-slate-800 shadow-xl z-10">
+                <button id="btnPrevFrame" class="p-2 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition border border-slate-700 flex items-center justify-center" title="Step Previous">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <button id="btnPlayPause" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <i id="playIcon" class="fa-solid fa-pause"></i>
+                    <span id="playLabel">Pause</span>
+                </button>
+                <button id="btnNextFrame" class="p-2 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition border border-slate-700 flex items-center justify-center" title="Step Next">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Slicer & Extracted Frames Sidebar -->
+        <aside class="w-full md:w-80 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto p-3.5 gap-3.5">
+            
+            <div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <h2 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <i class="fa-solid fa-table-cells text-indigo-400"></i>
+                        Grid Slicer Map
+                    </h2>
+                    <span id="gridInspectorDimBadge" class="text-[10px] text-slate-400 font-mono">3 x 3</span>
+                </div>
+
+                <div class="relative w-full aspect-square rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center p-1 checkerboard-bg-sm">
+                    <canvas id="gridInspectorCanvas" class="pixelated max-w-full max-h-full object-contain block"></canvas>
+                </div>
+                <p class="text-[10px] text-slate-400 text-center">Highlighted blue cells = Active animation frames</p>
+            </div>
+
+            <div class="flex-1 bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
+                <h2 class="text-xs font-bold text-slate-200 flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-film text-indigo-400"></i>
+                        Extracted Frames
+                    </span>
+                    <span id="activeCountBadge" class="text-[10px] font-mono text-indigo-400 font-bold">8 Frames</span>
+                </h2>
+
+                <div id="framesListContainer" class="grid grid-cols-4 gap-2 overflow-y-auto max-h-[220px] p-1">
+                    <!-- Dynamic Frame Thumbnails -->
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal: Export Code -->
+    <div id="modalCodeExport" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-code text-indigo-400"></i>
+                    Export Keyframe Animation Code
+                </h3>
+                <button class="closeModal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="relative bg-slate-950 rounded-xl border border-slate-800 p-3">
+                <pre id="codeSnippetBox" class="text-xs text-emerald-400 font-mono leading-relaxed overflow-x-auto max-h-60 p-1"></pre>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button class="closeModal px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Close</button>
+                <button id="btnCopyCode" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 flex items-center gap-2">
+                    <i class="fa-regular fa-copy"></i> Copy CSS
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toastMsg" class="text-xs font-medium">Notification</span>
+    </div>
+
+    <script>
+        // Configurable Sprite Catalog JSON Array
+        const SPRITE_PRESETS = [
+            {
+                id: 'rpg_1',
+                name: 'Knight Walk (./animations/rpg_1.png)',
+                path: './animations/rpg_1.png',
+                gridSize: 3,
+                frames: 8,
+                fps: 10,
+                chroma: true,
+                chromaColor: '#00FF00',
+                chromaTolerance: 40
+            },
+            {
+                id: 'procedural_knight',
+                name: 'Knight (Procedural 3x3 Canvas Demo)',
+                path: null,
+                gridSize: 3,
+                frames: 8,
+                fps: 10,
+                chroma: true,
+                chromaColor: '#00FF00',
+                chromaTolerance: 40
+            }
+        ];
+
+        const STORAGE_KEY = 'sprite_animator_settings_v2';
+
+        const defaultState = {
+            gridSize: 3,       // Square N x N (1 to 5)
+            totalFrames: 8,    // 1 to 25
+            fps: 10,
+            isPlaying: true,
+            currentFrame: 0,
+            zoom: 0.5,         // Defaulted to 50% scale
+            flipLeft: false,
+            traverse: false,
+            traverseX: 0,
+            chromaEnabled: true,
+            chromaColor: { r: 0, g: 255, b: 0 },
+            chromaHex: '#00FF00',
+            chromaTolerance: 40,
+            padX: 0,
+            padY: 0,
+            activePresetIndex: 0
+        };
+
+        let state = { ...defaultState, sourceImg: null, frameCanvases: [] };
+
+        // DOM elements
+        const animCanvas = document.getElementById('animCanvas');
+        const gridInspectorCanvas = document.getElementById('gridInspectorCanvas');
+        const animCtx = animCanvas.getContext('2d');
+        const inspectorCtx = gridInspectorCanvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const presetSelect = document.getElementById('presetSelect');
+
+        window.addEventListener('load', () => {
+            loadSavedSettings();
+            buildPresetSelector();
+            setupEventListeners();
+            applyStateToUI();
+            loadInitialPreset();
+            startAnimationLoop();
+        });
+
+        function loadSavedSettings() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                    // Ensure zoom is bounded
+                    if (typeof state.zoom !== 'number') state.zoom = 0.5;
+                }
+            } catch (e) {
+                console.warn('Unable to load localStorage settings', e);
+            }
+        }
+
+        function saveSettings() {
+            try {
+                const toSave = {
+                    gridSize: state.gridSize,
+                    totalFrames: state.totalFrames,
+                    fps: state.fps,
+                    zoom: state.zoom,
+                    flipLeft: state.flipLeft,
+                    traverse: state.traverse,
+                    chromaEnabled: state.chromaEnabled,
+                    chromaColor: state.chromaColor,
+                    chromaHex: state.chromaHex,
+                    chromaTolerance: state.chromaTolerance,
+                    padX: state.padX,
+                    padY: state.padY,
+                    activePresetIndex: state.activePresetIndex
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+            } catch (e) {
+                console.warn('Unable to persist to localStorage', e);
+            }
+        }
+
+        function buildPresetSelector() {
+            presetSelect.innerHTML = '';
+            SPRITE_PRESETS.forEach((p, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = p.name;
+                presetSelect.appendChild(opt);
+            });
+            presetSelect.value = state.activePresetIndex || 0;
+        }
+
+        function applyStateToUI() {
+            document.getElementById('gridDimSelect').value = state.gridSize;
+            document.getElementById('frameCountRange').max = state.gridSize * state.gridSize;
+            document.getElementById('frameCountRange').value = state.totalFrames;
+            document.getElementById('frameCountText').textContent = `${state.totalFrames} Frames`;
+            
+            document.getElementById('fpsRange').value = state.fps;
+            document.getElementById('fpsValueText').textContent = `${state.fps} FPS`;
+
+            document.getElementById('padXRange').value = state.padX;
+            document.getElementById('padXVal').textContent = `${state.padX}px`;
+
+            document.getElementById('padYRange').value = state.padY;
+            document.getElementById('padYVal').textContent = `${state.padY}px`;
+
+            document.getElementById('chromaKeyToggle').checked = state.chromaEnabled;
+            document.getElementById('chromaColorInput').value = state.chromaHex || '#00FF00';
+            document.getElementById('chromaHexVal').textContent = (state.chromaHex || '#00FF00').toUpperCase();
+            document.getElementById('chromaTolRange').value = state.chromaTolerance;
+            document.getElementById('chromaTolVal').textContent = `${state.chromaTolerance}%`;
+
+            document.getElementById('traverseToggle').checked = state.traverse;
+            document.getElementById('groundLine').classList.toggle('hidden', !state.traverse);
+
+            updateFacingButtonsUI();
+            updateZoomUI();
+            updateGridBadge();
+        }
+
+        function updateGridBadge() {
+            const txt = `${state.gridSize}x${state.gridSize} (${state.totalFrames} Frames)`;
+            document.getElementById('gridTypeBadge').textContent = txt;
+            document.getElementById('gridInspectorDimBadge').textContent = `${state.gridSize} x ${state.gridSize}`;
+        }
+
+        function updateFacingButtonsUI() {
+            if (state.flipLeft) {
+                document.getElementById('btnFlipLeft').className = 'px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-medium';
+                document.getElementById('btnFlipRight').className = 'px-2 py-0.5 hover:bg-slate-800 text-slate-400 text-[11px]';
+            } else {
+                document.getElementById('btnFlipRight').className = 'px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-medium';
+                document.getElementById('btnFlipLeft').className = 'px-2 py-0.5 hover:bg-slate-800 text-slate-400 text-[11px]';
+            }
+        }
+
+        function updateZoomUI() {
+            document.getElementById('zoomText').textContent = `${Math.round(state.zoom * 100)}%`;
+            updateCanvasDimensions();
+        }
+
+        function loadInitialPreset() {
+            const index = Math.min(state.activePresetIndex, SPRITE_PRESETS.length - 1);
+            loadPreset(index);
+        }
+
+        function loadPreset(index) {
+            const preset = SPRITE_PRESETS[index];
+            if (!preset) return;
+
+            state.activePresetIndex = index;
+            state.gridSize = preset.gridSize;
+            state.totalFrames = Math.min(preset.frames, state.gridSize * state.gridSize);
+            state.fps = preset.fps;
+            state.chromaEnabled = preset.chroma;
+            state.chromaHex = preset.chromaColor;
+            state.chromaColor = hexToRgb(preset.chromaColor);
+            state.chromaTolerance = preset.chromaTolerance;
+
+            applyStateToUI();
+            saveSettings();
+
+            if (preset.path) {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    state.sourceImg = img;
+                    document.getElementById('imageDimBadge').textContent = `${img.width}x${img.height} px`;
+                    sliceSpriteSheet();
+                    showToast(`Loaded "${preset.name}"`);
+                };
+                img.onerror = () => {
+                    // Fallback to procedural sample if local file isn't served
+                    showToast(`Could not load ${preset.path}, generating fallback sample...`);
+                    generateProceduralSheet(preset.gridSize, preset.frames);
+                };
+                img.src = preset.path;
+            } else {
+                generateProceduralSheet(preset.gridSize, preset.frames);
+            }
+        }
+
+        function generateProceduralSheet(gridSize = 3, frames = 8) {
+            const canvas = document.createElement('canvas');
+            const totalCells = gridSize;
+            const cellSize = 64;
+            const size = totalCells * cellSize;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Chroma Key Background
+            ctx.fillStyle = '#00FF00';
+            ctx.fillRect(0, 0, size, size);
+
+            for (let i = 0; i < frames; i++) {
+                const col = i % gridSize;
+                const row = Math.floor(i / gridSize);
+                const ox = col * cellSize + (cellSize * 0.3);
+                const oy = row * cellSize + (cellSize * 0.18);
+
+                const bounceY = Math.round(Math.sin((i / frames) * Math.PI * 2) * 3);
+                const legOffset = Math.round(Math.cos((i / frames) * Math.PI * 2) * 5);
+
+                // Helmet
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(ox + 6, oy + 4 + bounceY, 12, 12);
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillRect(ox + 8, oy + 6 + bounceY, 4, 4);
+
+                // Body Armor
+                ctx.fillStyle = '#2563eb';
+                ctx.fillRect(ox + 4, oy + 16 + bounceY, 16, 14);
+
+                // Cape
+                ctx.fillStyle = '#1e3a8a';
+                ctx.fillRect(ox + 0, oy + 16 + bounceY, 5, 18);
+
+                // Legs
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(ox + 6 + legOffset, oy + 30 + bounceY, 5, 10);
+                ctx.fillRect(ox + 13 - legOffset, oy + 30 + bounceY, 5, 10);
+            }
+
+            const img = new Image();
+            img.onload = () => {
+                state.sourceImg = img;
+                document.getElementById('imageDimBadge').textContent = `${img.width}x${img.height} px`;
+                sliceSpriteSheet();
+                showToast(`Generated ${gridSize}x${gridSize} Sample Sheet`);
+            };
+            img.src = canvas.toDataURL();
+        }
+
+        function applyChromaKey(sourceCanvas) {
+            const width = sourceCanvas.width;
+            const height = sourceCanvas.height;
+
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = width;
+            outCanvas.height = height;
+            const outCtx = outCanvas.getContext('2d');
+
+            outCtx.drawImage(sourceCanvas, 0, 0);
+            if (!state.chromaEnabled) return outCanvas;
+
+            const imgData = outCtx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+
+            const targetR = state.chromaColor.r;
+            const targetG = state.chromaColor.g;
+            const targetB = state.chromaColor.b;
+            const tol = (state.chromaTolerance / 100) * 255;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                const dist = Math.sqrt((r - targetR)**2 + (g - targetG)**2 + (b - targetB)**2);
+                if (dist < tol) {
+                    data[i + 3] = 0;
+                }
+            }
+
+            outCtx.putImageData(imgData, 0, 0);
+            return outCanvas;
+        }
+
+        function sliceSpriteSheet() {
+            if (!state.sourceImg) return;
+
+            const imgW = state.sourceImg.width;
+            const imgH = state.sourceImg.height;
+
+            gridInspectorCanvas.width = imgW;
+            gridInspectorCanvas.height = imgH;
+            inspectorCtx.clearRect(0, 0, imgW, imgH);
+            inspectorCtx.drawImage(state.sourceImg, 0, 0);
+
+            const cols = state.gridSize;
+            const rows = state.gridSize;
+            const cellW = Math.floor(imgW / cols);
+            const cellH = Math.floor(imgH / rows);
+
+            state.frameCanvases = [];
+
+            let frameIndex = 0;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (frameIndex >= state.totalFrames) break;
+
+                    const sx = c * cellW + state.padX;
+                    const sy = r * cellH + state.padY;
+                    const sw = Math.max(1, cellW - (state.padX * 2));
+                    const sh = Math.max(1, cellH - (state.padY * 2));
+
+                    const rawCell = document.createElement('canvas');
+                    rawCell.width = sw;
+                    rawCell.height = sh;
+                    const rawCtx = rawCell.getContext('2d');
+                    rawCtx.drawImage(state.sourceImg, sx, sy, sw, sh, 0, 0, sw, sh);
+
+                    const keyedCell = applyChromaKey(rawCell);
+                    state.frameCanvases.push(keyedCell);
+
+                    // Overlay Map Cell Box
+                    inspectorCtx.strokeStyle = 'rgba(99, 102, 241, 0.85)';
+                    inspectorCtx.lineWidth = Math.max(2, Math.floor(imgW / 128));
+                    inspectorCtx.strokeRect(c * cellW, r * cellH, cellW, cellH);
+
+                    // Cell Index Badge
+                    inspectorCtx.fillStyle = 'rgba(99, 102, 241, 0.9)';
+                    inspectorCtx.fillRect(c * cellW + 2, r * cellH + 2, 20, 14);
+                    inspectorCtx.fillStyle = '#ffffff';
+                    inspectorCtx.font = 'bold 10px monospace';
+                    inspectorCtx.fillText((frameIndex + 1).toString(), c * cellW + 5, r * cellH + 12);
+
+                    frameIndex++;
+                }
+            }
+
+            if (state.currentFrame >= state.frameCanvases.length) {
+                state.currentFrame = 0;
+            }
+
+            renderThumbnailsUI();
+            updateCanvasDimensions();
+            updateGridBadge();
+        }
+
+        function renderThumbnailsUI() {
+            const container = document.getElementById('framesListContainer');
+            container.innerHTML = '';
+
+            document.getElementById('activeCountBadge').textContent = `${state.frameCanvases.length} Frames`;
+
+            state.frameCanvases.forEach((fCanvas, idx) => {
+                const isActive = idx === state.currentFrame;
+
+                const card = document.createElement('div');
+                card.className = `aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden ${
+                    isActive ? 'border-indigo-500 bg-indigo-600/20 shadow-md scale-105' : 'border-slate-800 bg-slate-900 hover:border-slate-700'
+                } checkerboard-bg-sm`;
+
+                const img = document.createElement('img');
+                img.src = fCanvas.toDataURL();
+                img.className = 'pixelated w-full h-full object-contain p-1 pointer-events-none';
+
+                const badge = document.createElement('span');
+                badge.className = 'absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-slate-400';
+                badge.textContent = `#${idx + 1}`;
+
+                card.appendChild(img);
+                card.appendChild(badge);
+
+                card.addEventListener('click', () => {
+                    state.currentFrame = idx;
+                    state.isPlaying = false;
+                    updatePlayButtonUI();
+                    renderThumbnailsUI();
+                });
+
+                container.appendChild(card);
+            });
+
+            document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
+        }
+
+        function updateCanvasDimensions() {
+            if (state.frameCanvases.length === 0) return;
+
+            const frame = state.frameCanvases[0];
+            const fw = frame.width;
+            const fh = frame.height;
+
+            animCanvas.width = fw;
+            animCanvas.height = fh;
+
+            const displayScale = state.zoom;
+            animCanvas.style.width = `${fw * displayScale}px`;
+            animCanvas.style.height = `${fh * displayScale}px`;
+        }
+
+        let lastTimestamp = 0;
+        function startAnimationLoop() {
+            function loop(timestamp) {
+                const interval = 1000 / state.fps;
+
+                if (timestamp - lastTimestamp >= interval) {
+                    lastTimestamp = timestamp;
+
+                    if (state.isPlaying && state.frameCanvases.length > 0) {
+                        state.currentFrame = (state.currentFrame + 1) % state.frameCanvases.length;
+                        document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
+                        
+                        if (state.traverse) {
+                            state.traverseX += state.flipLeft ? -4 : 4;
+                            const stageW = document.getElementById('stageViewport').clientWidth;
+                            if (state.traverseX > stageW / 2) state.traverseX = -stageW / 2;
+                            if (state.traverseX < -stageW / 2) state.traverseX = stageW / 2;
+                        } else {
+                            state.traverseX = 0;
+                        }
+
+                        renderThumbnailsUI();
+                    }
+
+                    renderStageFrame();
+                }
+
+                requestAnimationFrame(loop);
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function renderStageFrame() {
+            if (state.frameCanvases.length === 0) return;
+
+            const frame = state.frameCanvases[state.currentFrame] || state.frameCanvases[0];
+            animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+
+            animCtx.save();
+            if (state.flipLeft) {
+                animCtx.translate(animCanvas.width, 0);
+                animCtx.scale(-1, 1);
+            }
+            animCtx.drawImage(frame, 0, 0);
+            animCtx.restore();
+
+            if (state.traverse) {
+                animCanvas.style.transform = `translateX(${state.traverseX}px)`;
+            } else {
+                animCanvas.style.transform = `translateX(0px)`;
+            }
+        }
+
+        function handleImageFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Please upload a valid image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.sourceImg = img;
+                    document.getElementById('imageDimBadge').textContent = `${img.width}x${img.height} px`;
+                    sliceSpriteSheet();
+                    showToast('Sprite Sheet loaded successfully!');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupEventListeners() {
+            // File input & Drag-and-drop
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleImageFile(e.target.files[0]);
+            });
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-indigo-500', 'bg-indigo-500/10');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10');
+                if (e.dataTransfer.files.length > 0) handleImageFile(e.dataTransfer.files[0]);
+            });
+
+            // Preset Selector
+            presetSelect.addEventListener('change', (e) => {
+                loadPreset(parseInt(e.target.value));
+            });
+
+            // Grid size selection (1x1 to 5x5)
+            document.getElementById('gridDimSelect').addEventListener('change', (e) => {
+                state.gridSize = parseInt(e.target.value);
+                const maxF = state.gridSize * state.gridSize;
+                const range = document.getElementById('frameCountRange');
+                range.max = maxF;
+                if (state.totalFrames > maxF) {
+                    state.totalFrames = maxF;
+                    range.value = maxF;
+                    document.getElementById('frameCountText').textContent = `${maxF} Frames`;
+                }
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            // Total active frames
+            document.getElementById('frameCountRange').addEventListener('input', (e) => {
+                state.totalFrames = parseInt(e.target.value);
+                document.getElementById('frameCountText').textContent = `${state.totalFrames} Frames`;
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            // Chroma Key Controls
+            document.getElementById('chromaKeyToggle').addEventListener('change', (e) => {
+                state.chromaEnabled = e.target.checked;
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            document.getElementById('chromaColorInput').addEventListener('input', (e) => {
+                const hex = e.target.value;
+                state.chromaHex = hex;
+                document.getElementById('chromaHexVal').textContent = hex.toUpperCase();
+                state.chromaColor = hexToRgb(hex);
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            document.getElementById('chromaTolRange').addEventListener('input', (e) => {
+                state.chromaTolerance = parseInt(e.target.value);
+                document.getElementById('chromaTolVal').textContent = `${state.chromaTolerance}%`;
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            // Padding Sliders
+            document.getElementById('padXRange').addEventListener('input', (e) => {
+                state.padX = parseInt(e.target.value);
+                document.getElementById('padXVal').textContent = `${state.padX}px`;
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            document.getElementById('padYRange').addEventListener('input', (e) => {
+                state.padY = parseInt(e.target.value);
+                document.getElementById('padYVal').textContent = `${state.padY}px`;
+                sliceSpriteSheet();
+                saveSettings();
+            });
+
+            // FPS
+            document.getElementById('fpsRange').addEventListener('input', (e) => {
+                state.fps = parseInt(e.target.value);
+                document.getElementById('fpsValueText').textContent = `${state.fps} FPS`;
+                saveSettings();
+            });
+
+            // Traversal Toggle
+            document.getElementById('traverseToggle').addEventListener('change', (e) => {
+                state.traverse = e.target.checked;
+                document.getElementById('groundLine').classList.toggle('hidden', !state.traverse);
+                saveSettings();
+            });
+
+            // Direction Buttons
+            document.getElementById('btnFlipRight').addEventListener('click', () => {
+                state.flipLeft = false;
+                updateFacingButtonsUI();
+                saveSettings();
+            });
+            document.getElementById('btnFlipLeft').addEventListener('click', () => {
+                state.flipLeft = true;
+                updateFacingButtonsUI();
+                saveSettings();
+            });
+
+            // Playback controls
+            document.getElementById('btnPlayPause').addEventListener('click', () => {
+                state.isPlaying = !state.isPlaying;
+                updatePlayButtonUI();
+            });
+
+            document.getElementById('btnPrevFrame').addEventListener('click', () => {
+                state.isPlaying = false;
+                updatePlayButtonUI();
+                state.currentFrame = (state.currentFrame - 1 + state.frameCanvases.length) % state.frameCanvases.length;
+                renderThumbnailsUI();
+            });
+
+            document.getElementById('btnNextFrame').addEventListener('click', () => {
+                state.isPlaying = false;
+                updatePlayButtonUI();
+                state.currentFrame = (state.currentFrame + 1) % state.frameCanvases.length;
+                renderThumbnailsUI();
+            });
+
+            // Zoom controls
+            document.getElementById('btnZoomIn').addEventListener('click', () => {
+                state.zoom = Math.min(5.0, +(state.zoom + 0.25).toFixed(2));
+                updateZoomUI();
+                saveSettings();
+            });
+            document.getElementById('btnZoomOut').addEventListener('click', () => {
+                state.zoom = Math.max(0.25, +(state.zoom - 0.25).toFixed(2));
+                updateZoomUI();
+                saveSettings();
+            });
+
+            // Reset Settings
+            document.getElementById('btnResetSettings').addEventListener('click', () => {
+                localStorage.removeItem(STORAGE_KEY);
+                state = { ...defaultState, sourceImg: state.sourceImg, frameCanvases: state.frameCanvases };
+                applyStateToUI();
+                sliceSpriteSheet();
+                showToast('Settings reset to defaults');
+            });
+
+            // APNG Export Action
+            document.getElementById('btnExportAPNG').addEventListener('click', exportToAPNG);
+
+            // GIF Export Action
+            document.getElementById('btnExportGIF').addEventListener('click', exportToGIF);
+
+            // Export Modal & Clipboard
+            document.getElementById('btnExportCode').addEventListener('click', openCodeExportModal);
+            document.querySelectorAll('.closeModal').forEach(b => {
+                b.addEventListener('click', () => {
+                    document.getElementById('modalCodeExport').classList.add('hidden');
+                });
+            });
+
+            document.getElementById('btnCopyCode').addEventListener('click', () => {
+                const text = document.getElementById('codeSnippetBox').textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('CSS copied to clipboard!');
+                }).catch(() => {
+                    showToast('Copy failed');
+                });
+            });
+        }
+
+        function exportToAPNG() {
+            if (!state.frameCanvases.length) {
+                showToast('No frames available to export');
+                return;
+            }
+
+            try {
+                showToast('Generating APNG...');
+                const width = state.frameCanvases[0].width;
+                const height = state.frameCanvases[0].height;
+                const buffers = [];
+                const delays = [];
+                const frameDelay = Math.round(1000 / state.fps);
+
+                state.frameCanvases.forEach(canvas => {
+                    const ctx = canvas.getContext('2d');
+                    const imgData = ctx.getImageData(0, 0, width, height);
+                    buffers.push(imgData.data.buffer);
+                    delays.push(frameDelay);
+                });
+
+                // Encode with UPNG
+                const apngBuffer = UPNG.encode(buffers, width, height, 0, delays);
+                const blob = new Blob([apngBuffer], { type: 'image/png' });
+                downloadBlob(blob, 'sprite_animation.png');
+                showToast('APNG exported successfully!');
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to export APNG');
+            }
+        }
+
+        function exportToGIF() {
+            if (!state.frameCanvases.length) {
+                showToast('No frames available to export');
+                return;
+            }
+
+            showToast('Generating GIF...');
+            const images = state.frameCanvases.map(c => c.toDataURL('image/png'));
+            const width = state.frameCanvases[0].width;
+            const height = state.frameCanvases[0].height;
+            const interval = 1 / state.fps;
+
+            gifshot.createGIF({
+                images: images,
+                gifWidth: width,
+                gifHeight: height,
+                interval: interval,
+                numWorkers: 2
+            }, function(obj) {
+                if (!obj.error) {
+                    const animatedImage = obj.image;
+                    const a = document.createElement('a');
+                    a.href = animatedImage;
+                    a.download = 'sprite_animation.gif';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showToast('GIF exported successfully!');
+                } else {
+                    console.error(obj.errorMsg);
+                    showToast('Failed to generate GIF');
+                }
+            });
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updatePlayButtonUI() {
+            const icon = document.getElementById('playIcon');
+            const label = document.getElementById('playLabel');
+            icon.className = state.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+            label.textContent = state.isPlaying ? 'Pause' : 'Play';
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 255, b: 0 };
+        }
+
+        function openCodeExportModal() {
+            const modal = document.getElementById('modalCodeExport');
+            modal.classList.remove('hidden');
+
+            const frameW = state.frameCanvases[0] ? state.frameCanvases[0].width : 64;
+            const duration = (state.totalFrames / state.fps).toFixed(2);
+            const cols = state.gridSize;
+
+            let keyframes = `@keyframes spriteAnim {\n`;
+            for (let i = 0; i < state.totalFrames; i++) {
+                const pct = ((i / state.totalFrames) * 100).toFixed(1);
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                keyframes += `  ${pct}% { background-position: -${col * frameW}px -${row * frameW}px; }\n`;
+            }
+            keyframes += `}`;
+
+            const css = `/* ${state.gridSize}x${state.gridSize} Grid (${state.totalFrames} Frames) Animation */
+.sprite-animated {
+  width: ${frameW}px;
+  height: ${frameW}px;
+  background-image: url('spritesheet.png');
+  animation: spriteAnim ${duration}s steps(1) infinite;
+  image-rendering: pixelated;
+}
+
+${keyframes}`;
+            document.getElementById('codeSnippetBox').textContent = css;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
