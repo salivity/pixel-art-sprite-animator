@@ -1,11 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950 text-slate-100 select-none">
+<html lang="en" class="h-full select-none">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprite Sheet Animator & Exporter</title>
+    <title>Pixel Art Sprite Animator - Salivity</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#6366f1'
+                    }
+                }
+            }
+        }
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +28,7 @@
     <!-- APNG & GIF Export Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/upng-js/2.1.0/UPNG.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -36,6 +48,14 @@
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         }
+        html:not(.dark) .checkerboard-bg {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+        }
         .checkerboard-bg-sm {
             background-color: #0b0f19;
             background-image: 
@@ -46,58 +66,70 @@
             background-size: 10px 10px;
             background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
         }
+        html:not(.dark) .checkerboard-bg-sm {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+        }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="h-full flex flex-col overflow-hidden bg-slate-950 text-slate-100">
+<body class="h-full flex flex-col overflow-hidden bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200">
 
-    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur shrink-0 px-4 py-2.5 flex items-center justify-between z-30">
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur shrink-0 px-4 py-2.5 flex items-center justify-between z-30 transition-colors duration-200">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20">
                 <i class="fa-solid fa-film"></i>
             </div>
             <div>
-                <h1 class="font-bold text-base text-white leading-tight flex items-center gap-2">
+                <h1 class="font-bold text-base text-slate-900 dark:text-white leading-tight flex items-center gap-2">
                     Square Grid Sprite Animator
-                    <span id="gridTypeBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">3x3 (8 Frames)</span>
+                    <span id="gridTypeBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30">3x3 (8 Frames)</span>
                 </h1>
-                <p class="text-[11px] text-slate-400">1×1 to 5×5 Grids (Up to 25 Frames) • LocalStorage • APNG & GIF Exporter</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">1×1 to 5×5 Grids • LocalStorage • APNG & Transparent GIF Exporter</p>
             </div>
         </div>
 
         <div class="flex items-center gap-2 text-xs">
+            <!-- Theme Toggle Button -->
+            <button id="btnThemeToggle" class="p-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 font-medium transition flex items-center justify-center shadow-sm" title="Toggle Light/Dark Theme">
+                <i id="themeIcon" class="fa-solid fa-sun text-sm"></i>
+            </button>
+
             <label class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition cursor-pointer shadow-md shadow-indigo-600/20 flex items-center gap-2">
                 <i class="fa-solid fa-folder-open"></i>
                 <span>Load File</span>
                 <input type="file" id="fileInput" accept="image/*" class="hidden">
             </label>
 
-            <!-- Sprite Preset Selector (Populated from JSON array) -->
-            <div class="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1">
-                <i class="fa-solid fa-list-check text-amber-400 text-[11px]"></i>
-                <select id="presetSelect" class="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer">
-                    <!-- Populated dynamically via JSON array -->
+            <!-- Sprite Preset Selector -->
+            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1">
+                <i class="fa-solid fa-list-check text-amber-500 dark:text-amber-400 text-[11px]"></i>
+                <select id="presetSelect" class="bg-transparent text-slate-700 dark:text-slate-200 text-xs focus:outline-none cursor-pointer">
                 </select>
             </div>
 
             <!-- APNG Export -->
-            <button id="btnExportAPNG" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-emerald-700/20" title="Export as Animated PNG">
+            <button id="btnExportAPNG" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-emerald-700/20" title="Export as Animated PNG">
                 <i class="fa-solid fa-file-image"></i>
                 <span>Export APNG</span>
             </button>
 
             <!-- GIF Export -->
-            <button id="btnExportGIF" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-amber-600/20" title="Export as Animated GIF">
+            <button id="btnExportGIF" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-amber-600/20" title="Export as Transparent Animated GIF">
                 <i class="fa-solid fa-file-video"></i>
                 <span>Export GIF</span>
             </button>
 
             <!-- Export CSS Snippet -->
-            <button id="btnExportCode" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium transition flex items-center gap-1.5">
-                <i class="fa-solid fa-code text-indigo-400"></i>
+            <button id="btnExportCode" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-medium transition flex items-center gap-1.5">
+                <i class="fa-solid fa-code text-indigo-500 dark:text-indigo-400"></i>
                 <span class="hidden lg:inline">CSS</span>
             </button>
         </div>
@@ -106,36 +138,36 @@
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
         <!-- Controls Sidebar -->
-        <aside class="w-full md:w-80 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto">
+        <aside class="w-full md:w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto">
             
             <!-- Sprite Sheet Upload & Drop Zone -->
-            <div class="p-3.5 border-b border-slate-800">
-                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2 flex items-center justify-between">
+            <div class="p-3.5 border-b border-slate-200 dark:border-slate-800">
+                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-2 flex items-center justify-between">
                     <span class="flex items-center gap-1.5">
-                        <i class="fa-solid fa-image text-indigo-400"></i>
+                        <i class="fa-solid fa-image text-indigo-500 dark:text-indigo-400"></i>
                         Input Source
                     </span>
                     <span id="imageDimBadge" class="text-[10px] text-slate-500 font-mono">0x0 px</span>
                 </h2>
 
-                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-center transition cursor-pointer bg-slate-950/50 flex flex-col items-center gap-1.5">
-                    <i class="fa-solid fa-cloud-arrow-up text-xl text-indigo-400"></i>
-                    <p class="text-xs font-medium text-slate-300">Click or Drag & Drop Sheet</p>
-                    <p class="text-[10px] text-slate-500">Square Sheets (Up to 5x5 grid, 25 frames)</p>
+                <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 rounded-xl p-3 text-center transition cursor-pointer bg-slate-50 dark:bg-slate-950/50 flex flex-col items-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-up text-xl text-indigo-500 dark:text-indigo-400"></i>
+                    <p class="text-xs font-medium text-slate-700 dark:text-slate-300">Click or Drag & Drop Sheet</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500">Square Sheets (Up to 5x5 grid, 25 frames)</p>
                 </div>
             </div>
 
             <!-- Square Grid Controls -->
-            <div class="p-3.5 border-b border-slate-800 flex flex-col gap-3">
-                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-table-cells text-indigo-400"></i>
+            <div class="p-3.5 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-table-cells text-indigo-500 dark:text-indigo-400"></i>
                     Grid Dimensions (Square)
                 </h2>
 
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Grid Size (N x N)</label>
-                        <select id="gridDimSelect" class="w-full bg-slate-950 text-slate-200 text-xs rounded-lg p-1.5 border border-slate-800 focus:outline-none cursor-pointer">
+                        <label class="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Grid Size (N x N)</label>
+                        <select id="gridDimSelect" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs rounded-lg p-1.5 border border-slate-300 dark:border-slate-800 focus:outline-none cursor-pointer">
                             <option value="1">1 x 1 (1 slot)</option>
                             <option value="2">2 x 2 (4 slots)</option>
                             <option value="3">3 x 3 (9 slots)</option>
@@ -144,168 +176,167 @@
                         </select>
                     </div>
                     <div>
-                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                             <span>Active Frames</span>
-                            <span id="frameCountText" class="font-mono text-indigo-400 font-bold">8 Frames</span>
+                            <span id="frameCountText" class="font-mono text-indigo-600 dark:text-indigo-400 font-bold">8 Frames</span>
                         </div>
-                        <input type="range" id="frameCountRange" min="1" max="25" value="8" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full mt-2">
+                        <input type="range" id="frameCountRange" min="1" max="25" value="8" class="accent-indigo-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer w-full mt-2">
                     </div>
                 </div>
 
                 <!-- Margin / Padding Crop Adjustments -->
                 <div class="grid grid-cols-2 gap-2 text-xs pt-1">
                     <div>
-                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                             <span>Padding X</span>
-                            <span id="padXVal" class="font-mono text-slate-300">0px</span>
+                            <span id="padXVal" class="font-mono text-slate-700 dark:text-slate-300">0px</span>
                         </div>
-                        <input type="range" id="padXRange" min="0" max="40" value="0" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full">
+                        <input type="range" id="padXRange" min="0" max="40" value="0" class="accent-indigo-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer w-full">
                     </div>
                     <div>
-                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                             <span>Padding Y</span>
-                            <span id="padYVal" class="font-mono text-slate-300">0px</span>
+                            <span id="padYVal" class="font-mono text-slate-700 dark:text-slate-300">0px</span>
                         </div>
-                        <input type="range" id="padYRange" min="0" max="40" value="0" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full">
+                        <input type="range" id="padYRange" min="0" max="40" value="0" class="accent-indigo-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer w-full">
                     </div>
                 </div>
             </div>
 
             <!-- Chroma Key / Green Screen Remover -->
-            <div class="p-3.5 border-b border-slate-800 flex flex-col gap-3">
+            <div class="p-3.5 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-3">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles text-emerald-400"></i>
+                    <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-emerald-500 dark:text-emerald-400"></i>
                         Chroma Key Removal
                     </h2>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="chromaKeyToggle" checked class="sr-only peer">
-                        <div class="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                        <div class="w-8 h-4 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
                     </label>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                        <label class="text-[10px] text-slate-400 block mb-1">Key Color</label>
-                        <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                        <label class="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Key Color</label>
+                        <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-lg border border-slate-300 dark:border-slate-800">
                             <input type="color" id="chromaColorInput" value="#00FF00" class="w-6 h-6 rounded cursor-pointer border-0 p-0 bg-transparent">
-                            <span id="chromaHexVal" class="font-mono text-[11px] text-slate-300">#00FF00</span>
+                            <span id="chromaHexVal" class="font-mono text-[11px] text-slate-700 dark:text-slate-300">#00FF00</span>
                         </div>
                     </div>
                     <div>
-                        <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                             <span>Tolerance</span>
-                            <span id="chromaTolVal" class="font-mono text-emerald-400 font-bold">40%</span>
+                            <span id="chromaTolVal" class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">40%</span>
                         </div>
-                        <input type="range" id="chromaTolRange" min="1" max="90" value="40" class="accent-emerald-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer w-full mt-2">
+                        <input type="range" id="chromaTolRange" min="1" max="90" value="40" class="accent-emerald-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer w-full mt-2">
                     </div>
                 </div>
             </div>
 
             <!-- Playback & Motion Settings -->
             <div class="p-3.5 flex-1 flex flex-col gap-3">
-                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-play text-indigo-400"></i>
+                <h2 class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-play text-indigo-500 dark:text-indigo-400"></i>
                     Playback & Movement
                 </h2>
 
                 <div class="flex flex-col gap-1">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="text-slate-400">Animation Speed</span>
-                        <span id="fpsValueText" class="text-indigo-400 font-bold font-mono">10 FPS</span>
+                        <span class="text-slate-500 dark:text-slate-400">Animation Speed</span>
+                        <span id="fpsValueText" class="text-indigo-600 dark:text-indigo-400 font-bold font-mono">10 FPS</span>
                     </div>
-                    <input type="range" id="fpsRange" min="1" max="30" value="10" class="accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                    <input type="range" id="fpsRange" min="1" max="60" value="10" class="accent-indigo-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer">
                 </div>
 
-                <div class="flex items-center justify-between bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
+                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-300 dark:border-slate-800 text-xs">
                     <div>
-                        <div class="font-medium text-slate-200">Stage Traversal Mode</div>
-                        <div class="text-[10px] text-slate-400">Walk horizontally across stage</div>
+                        <div class="font-medium text-slate-800 dark:text-slate-200">Stage Traversal Mode</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400">Walk horizontally across stage</div>
                     </div>
                     <input type="checkbox" id="traverseToggle" class="accent-indigo-500 w-4 h-4 rounded">
                 </div>
 
-                <div class="flex items-center justify-between bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
-                    <span class="text-slate-300">Facing Direction</span>
-                    <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-300 dark:border-slate-800 text-xs">
+                    <span class="text-slate-700 dark:text-slate-300">Facing Direction</span>
+                    <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-300 dark:border-slate-800">
                         <button id="btnFlipRight" class="px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-medium">Right</button>
-                        <button id="btnFlipLeft" class="px-2 py-0.5 hover:bg-slate-800 text-slate-400 text-[11px]">Left</button>
+                        <button id="btnFlipLeft" class="px-2 py-0.5 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px]">Left</button>
                     </div>
                 </div>
 
-                <button id="btnResetSettings" class="mt-2 text-slate-400 hover:text-rose-400 text-xs py-1 transition flex items-center justify-center gap-1.5">
+                <button id="btnResetSettings" class="mt-2 text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 text-xs py-1 transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-arrow-rotate-left"></i> Reset Defaults
                 </button>
             </div>
         </aside>
 
         <!-- Center Stage -->
-        <section class="flex-1 bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden group">
+        <section class="flex-1 bg-slate-200/50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden group">
             
             <div class="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
-                <div class="pointer-events-auto bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 shadow-xl flex items-center gap-2">
+                <div class="pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-800 text-xs font-mono text-slate-700 dark:text-slate-300 shadow-xl flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Frame: <strong id="currentFrameBadge" class="text-emerald-400">1 / 8</strong></span>
+                    <span>Frame: <strong id="currentFrameBadge" class="text-emerald-600 dark:text-emerald-400">1 / 8</strong></span>
                 </div>
 
                 <!-- Zoom Controls (Defaults to 50%) -->
-                <div class="pointer-events-auto bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg border border-slate-800 text-xs text-slate-300 flex items-center gap-1 shadow-xl">
-                    <button id="btnZoomOut" class="p-1 px-2 hover:bg-slate-800 rounded transition" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
-                    <span id="zoomText" class="font-mono text-[11px] px-1 text-indigo-400 font-bold">50%</span>
-                    <button id="btnZoomIn" class="p-1 px-2 hover:bg-slate-800 rounded transition" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                <div class="pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 flex items-center gap-1 shadow-xl">
+                    <button id="btnZoomOut" class="p-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                    <span id="zoomText" class="font-mono text-[11px] px-1 text-indigo-600 dark:text-indigo-400 font-bold">50%</span>
+                    <button id="btnZoomIn" class="p-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
 
-            <!-- Transparency Checkerboard Stage (No background presets) -->
-            <div id="stageViewport" class="relative w-full h-full max-h-[460px] rounded-2xl checkerboard-bg border border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl transition-all">
+            <!-- Transparency Checkerboard Stage -->
+            <div id="stageViewport" class="relative w-full h-full max-h-[460px] rounded-2xl checkerboard-bg border border-slate-300 dark:border-slate-800 flex items-center justify-center overflow-hidden shadow-2xl transition-all">
                 <canvas id="animCanvas" class="pixelated block cursor-pointer"></canvas>
                 <div id="groundLine" class="absolute bottom-10 left-0 right-0 h-0.5 bg-indigo-500/30 border-t border-dashed border-indigo-400/50 hidden pointer-events-none"></div>
             </div>
 
             <!-- Playback Bar -->
-            <div class="mt-4 flex items-center gap-3 bg-slate-900/90 backdrop-blur px-4 py-2 rounded-2xl border border-slate-800 shadow-xl z-10">
-                <button id="btnPrevFrame" class="p-2 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition border border-slate-700 flex items-center justify-center" title="Step Previous">
+            <div class="mt-4 flex items-center gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-4 py-2 rounded-2xl border border-slate-300 dark:border-slate-800 shadow-xl z-10">
+                <button id="btnPrevFrame" class="p-2 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Step Previous">
                     <i class="fa-solid fa-backward-step"></i>
                 </button>
                 <button id="btnPlayPause" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <i id="playIcon" class="fa-solid fa-pause"></i>
                     <span id="playLabel">Pause</span>
                 </button>
-                <button id="btnNextFrame" class="p-2 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition border border-slate-700 flex items-center justify-center" title="Step Next">
+                <button id="btnNextFrame" class="p-2 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition border border-slate-300 dark:border-slate-700 flex items-center justify-center" title="Step Next">
                     <i class="fa-solid fa-forward-step"></i>
                 </button>
             </div>
         </section>
 
         <!-- Slicer & Extracted Frames Sidebar -->
-        <aside class="w-full md:w-80 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto p-3.5 gap-3.5">
+        <aside class="w-full md:w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto p-3.5 gap-3.5">
             
-            <div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
-                <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                    <h2 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <i class="fa-solid fa-table-cells text-indigo-400"></i>
+            <div class="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                    <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <i class="fa-solid fa-table-cells text-indigo-500 dark:text-indigo-400"></i>
                         Grid Slicer Map
                     </h2>
-                    <span id="gridInspectorDimBadge" class="text-[10px] text-slate-400 font-mono">3 x 3</span>
+                    <span id="gridInspectorDimBadge" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">3 x 3</span>
                 </div>
 
-                <div class="relative w-full aspect-square rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center p-1 checkerboard-bg-sm">
+                <div class="relative w-full aspect-square rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden flex items-center justify-center p-1 checkerboard-bg-sm">
                     <canvas id="gridInspectorCanvas" class="pixelated max-w-full max-h-full object-contain block"></canvas>
                 </div>
-                <p class="text-[10px] text-slate-400 text-center">Highlighted blue cells = Active animation frames</p>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 text-center">Highlighted blue cells = Active animation frames</p>
             </div>
 
-            <div class="flex-1 bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
-                <h2 class="text-xs font-bold text-slate-200 flex items-center justify-between border-b border-slate-800/80 pb-2">
+            <div class="flex-1 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 flex flex-col gap-2 shadow-xl">
+                <h2 class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
                     <span class="flex items-center gap-1.5">
-                        <i class="fa-solid fa-film text-indigo-400"></i>
+                        <i class="fa-solid fa-film text-indigo-500 dark:text-indigo-400"></i>
                         Extracted Frames
                     </span>
-                    <span id="activeCountBadge" class="text-[10px] font-mono text-indigo-400 font-bold">8 Frames</span>
+                    <span id="activeCountBadge" class="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">8 Frames</span>
                 </h2>
 
                 <div id="framesListContainer" class="grid grid-cols-4 gap-2 overflow-y-auto max-h-[220px] p-1">
-                    <!-- Dynamic Frame Thumbnails -->
                 </div>
             </div>
         </aside>
@@ -313,21 +344,21 @@
 
     <!-- Modal: Export Code -->
     <div id="modalCodeExport" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-code text-indigo-400"></i>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full p-5 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-code text-indigo-500 dark:text-indigo-400"></i>
                     Export Keyframe Animation Code
                 </h3>
-                <button class="closeModal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button class="closeModal text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <div class="relative bg-slate-950 rounded-xl border border-slate-800 p-3">
+            <div class="relative bg-slate-900 rounded-xl border border-slate-800 p-3">
                 <pre id="codeSnippetBox" class="text-xs text-emerald-400 font-mono leading-relaxed overflow-x-auto max-h-60 p-1"></pre>
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-                <button class="closeModal px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Close</button>
+                <button class="closeModal px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold">Close</button>
                 <button id="btnCopyCode" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 flex items-center gap-2">
                     <i class="fa-regular fa-copy"></i> Copy CSS
                 </button>
@@ -336,13 +367,12 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50 pointer-events-none">
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50 pointer-events-none">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
         <span id="toastMsg" class="text-xs font-medium">Notification</span>
     </div>
 
     <script>
-        // Configurable Sprite Catalog JSON Array
         const SPRITE_PRESETS = [
             {
                 id: 'rpg_1',
@@ -368,15 +398,16 @@
             }
         ];
 
-        const STORAGE_KEY = 'sprite_animator_settings_v2';
+        const STORAGE_KEY = 'pixel-art-sprite-animator';
+        const THEME_KEY = 'theme';
 
         const defaultState = {
-            gridSize: 3,       // Square N x N (1 to 5)
-            totalFrames: 8,    // 1 to 25
+            gridSize: 3,
+            totalFrames: 8,
             fps: 10,
             isPlaying: true,
             currentFrame: 0,
-            zoom: 0.5,         // Defaulted to 50% scale
+            zoom: 0.5,
             flipLeft: false,
             traverse: false,
             traverseX: 0,
@@ -391,7 +422,6 @@
 
         let state = { ...defaultState, sourceImg: null, frameCanvases: [] };
 
-        // DOM elements
         const animCanvas = document.getElementById('animCanvas');
         const gridInspectorCanvas = document.getElementById('gridInspectorCanvas');
         const animCtx = animCanvas.getContext('2d');
@@ -401,6 +431,7 @@
         const presetSelect = document.getElementById('presetSelect');
 
         window.addEventListener('load', () => {
+            initTheme();
             loadSavedSettings();
             buildPresetSelector();
             setupEventListeners();
@@ -409,13 +440,37 @@
             startAnimationLoop();
         });
 
+        // ----------------- Theme Handling -----------------
+        function initTheme() {
+            const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+            applyTheme(savedTheme);
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-400';
+            } else {
+                html.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-slate-700';
+            }
+            localStorage.setItem(THEME_KEY, theme);
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            applyTheme(isDark ? 'light' : 'dark');
+        }
+
+        // ----------------- Settings & LocalStorage -----------------
         function loadSavedSettings() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     state = { ...state, ...parsed };
-                    // Ensure zoom is bounded
                     if (typeof state.zoom !== 'number') state.zoom = 0.5;
                 }
             } catch (e) {
@@ -495,10 +550,10 @@
         function updateFacingButtonsUI() {
             if (state.flipLeft) {
                 document.getElementById('btnFlipLeft').className = 'px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-medium';
-                document.getElementById('btnFlipRight').className = 'px-2 py-0.5 hover:bg-slate-800 text-slate-400 text-[11px]';
+                document.getElementById('btnFlipRight').className = 'px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px]';
             } else {
                 document.getElementById('btnFlipRight').className = 'px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px] font-medium';
-                document.getElementById('btnFlipLeft').className = 'px-2 py-0.5 hover:bg-slate-800 text-slate-400 text-[11px]';
+                document.getElementById('btnFlipLeft').className = 'px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px]';
             }
         }
 
@@ -538,7 +593,6 @@
                     showToast(`Loaded "${preset.name}"`);
                 };
                 img.onerror = () => {
-                    // Fallback to procedural sample if local file isn't served
                     showToast(`Could not load ${preset.path}, generating fallback sample...`);
                     generateProceduralSheet(preset.gridSize, preset.frames);
                 };
@@ -557,7 +611,6 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            // Chroma Key Background
             ctx.fillStyle = '#00FF00';
             ctx.fillRect(0, 0, size, size);
 
@@ -672,12 +725,10 @@
                     const keyedCell = applyChromaKey(rawCell);
                     state.frameCanvases.push(keyedCell);
 
-                    // Overlay Map Cell Box
                     inspectorCtx.strokeStyle = 'rgba(99, 102, 241, 0.85)';
                     inspectorCtx.lineWidth = Math.max(2, Math.floor(imgW / 128));
                     inspectorCtx.strokeRect(c * cellW, r * cellH, cellW, cellH);
 
-                    // Cell Index Badge
                     inspectorCtx.fillStyle = 'rgba(99, 102, 241, 0.9)';
                     inspectorCtx.fillRect(c * cellW + 2, r * cellH + 2, 20, 14);
                     inspectorCtx.fillStyle = '#ffffff';
@@ -708,7 +759,7 @@
 
                 const card = document.createElement('div');
                 card.className = `aspect-square rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden ${
-                    isActive ? 'border-indigo-500 bg-indigo-600/20 shadow-md scale-105' : 'border-slate-800 bg-slate-900 hover:border-slate-700'
+                    isActive ? 'border-indigo-500 bg-indigo-600/20 shadow-md scale-105' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
                 } checkerboard-bg-sm`;
 
                 const img = document.createElement('img');
@@ -716,7 +767,7 @@
                 img.className = 'pixelated w-full h-full object-contain p-1 pointer-events-none';
 
                 const badge = document.createElement('span');
-                badge.className = 'absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-slate-400';
+                badge.className = 'absolute bottom-0.5 right-1 text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400';
                 badge.textContent = `#${idx + 1}`;
 
                 card.appendChild(img);
@@ -750,18 +801,30 @@
             animCanvas.style.height = `${fh * displayScale}px`;
         }
 
-        let lastTimestamp = 0;
+        // Precise Timing Loop supporting high FPS (up to 60+ FPS)
+        let lastTime = 0;
+        let accumulator = 0;
+
         function startAnimationLoop() {
-            function loop(timestamp) {
-                const interval = 1000 / state.fps;
+            function loop(currentTime) {
+                if (!lastTime) lastTime = currentTime;
+                const delta = currentTime - lastTime;
+                lastTime = currentTime;
 
-                if (timestamp - lastTimestamp >= interval) {
-                    lastTimestamp = timestamp;
+                const frameDuration = 1000 / state.fps;
 
-                    if (state.isPlaying && state.frameCanvases.length > 0) {
+                if (state.isPlaying && state.frameCanvases.length > 0) {
+                    accumulator += delta;
+
+                    // Prevent spiral of death on tab switches
+                    if (accumulator > 1000) accumulator = frameDuration;
+
+                    let frameAdvanced = false;
+                    while (accumulator >= frameDuration) {
                         state.currentFrame = (state.currentFrame + 1) % state.frameCanvases.length;
-                        document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
-                        
+                        accumulator -= frameDuration;
+                        frameAdvanced = true;
+
                         if (state.traverse) {
                             state.traverseX += state.flipLeft ? -4 : 4;
                             const stageW = document.getElementById('stageViewport').clientWidth;
@@ -770,13 +833,17 @@
                         } else {
                             state.traverseX = 0;
                         }
-
-                        renderThumbnailsUI();
                     }
 
-                    renderStageFrame();
+                    if (frameAdvanced) {
+                        document.getElementById('currentFrameBadge').textContent = `${state.currentFrame + 1} / ${state.frameCanvases.length}`;
+                        renderThumbnailsUI();
+                    }
+                } else {
+                    accumulator = 0;
                 }
 
+                renderStageFrame();
                 requestAnimationFrame(loop);
             }
             requestAnimationFrame(loop);
@@ -824,6 +891,9 @@
         }
 
         function setupEventListeners() {
+            // Theme Switcher
+            document.getElementById('btnThemeToggle').addEventListener('click', toggleTheme);
+
             // File input & Drag-and-drop
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length > 0) handleImageFile(e.target.files[0]);
@@ -909,7 +979,7 @@
                 saveSettings();
             });
 
-            // FPS
+            // FPS (1 to 60)
             document.getElementById('fpsRange').addEventListener('input', (e) => {
                 state.fps = parseInt(e.target.value);
                 document.getElementById('fpsValueText').textContent = `${state.fps} FPS`;
@@ -1021,7 +1091,6 @@
                     delays.push(frameDelay);
                 });
 
-                // Encode with UPNG
                 const apngBuffer = UPNG.encode(buffers, width, height, 0, delays);
                 const blob = new Blob([apngBuffer], { type: 'image/png' });
                 downloadBlob(blob, 'sprite_animation.png');
@@ -1032,39 +1101,43 @@
             }
         }
 
+        // Transparent GIF generation using gif.js with frame disposal
         function exportToGIF() {
             if (!state.frameCanvases.length) {
                 showToast('No frames available to export');
                 return;
             }
 
-            showToast('Generating GIF...');
-            const images = state.frameCanvases.map(c => c.toDataURL('image/png'));
+            showToast('Rendering Transparent GIF...');
             const width = state.frameCanvases[0].width;
             const height = state.frameCanvases[0].height;
-            const interval = 1 / state.fps;
+            const delay = Math.round(1000 / state.fps);
 
-            gifshot.createGIF({
-                images: images,
-                gifWidth: width,
-                gifHeight: height,
-                interval: interval,
-                numWorkers: 2
-            }, function(obj) {
-                if (!obj.error) {
-                    const animatedImage = obj.image;
-                    const a = document.createElement('a');
-                    a.href = animatedImage;
-                    a.download = 'sprite_animation.gif';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    showToast('GIF exported successfully!');
-                } else {
-                    console.error(obj.errorMsg);
-                    showToast('Failed to generate GIF');
-                }
-            });
+            try {
+                const gif = new GIF({
+                    workers: 2,
+                    quality: 10,
+                    width: width,
+                    height: height,
+                    transparent: 0x00000000,
+                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                });
+
+                state.frameCanvases.forEach(canvas => {
+                    // dispose: 2 restores the background per frame, preventing residue
+                    gif.addFrame(canvas, { delay: delay, dispose: 2 });
+                });
+
+                gif.on('finished', function(blob) {
+                    downloadBlob(blob, 'sprite_animation.gif');
+                    showToast('Transparent GIF exported!');
+                });
+
+                gif.render();
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to export GIF');
+            }
         }
 
         function downloadBlob(blob, filename) {
