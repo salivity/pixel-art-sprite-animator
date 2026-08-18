@@ -707,6 +707,7 @@
             state.frameCanvases = [];
 
             let frameIndex = 0;
+            // Top-left to bottom-right order (Row-major)
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     if (frameIndex >= state.totalFrames) break;
@@ -801,7 +802,7 @@
             animCanvas.style.height = `${fh * displayScale}px`;
         }
 
-        // Precise Timing Loop supporting high FPS (up to 60+ FPS)
+        // Precise Timing Loop supporting high FPS
         let lastTime = 0;
         let accumulator = 0;
 
@@ -816,7 +817,7 @@
                 if (state.isPlaying && state.frameCanvases.length > 0) {
                     accumulator += delta;
 
-                    // Prevent spiral of death on tab switches
+                    // Prevent frame burst on tab switch
                     if (accumulator > 1000) accumulator = frameDuration;
 
                     let frameAdvanced = false;
@@ -1101,8 +1102,8 @@
             }
         }
 
-        // Transparent GIF generation using gif.js with frame disposal
-        function exportToGIF() {
+        // Transparent GIF generation with Blob-Worker to bypass CDN CORS
+        async function exportToGIF() {
             if (!state.frameCanvases.length) {
                 showToast('No frames available to export');
                 return;
@@ -1114,21 +1115,27 @@
             const delay = Math.round(1000 / state.fps);
 
             try {
+                // Fetch worker source code and load via ObjectURL blob to bypass Web Worker origin restrictions
+                const workerResponse = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
+                const workerBlob = new Blob([await workerResponse.text()], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(workerBlob);
+
                 const gif = new GIF({
                     workers: 2,
                     quality: 10,
                     width: width,
                     height: height,
                     transparent: 0x00000000,
-                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                    workerScript: workerUrl
                 });
 
                 state.frameCanvases.forEach(canvas => {
-                    // dispose: 2 restores the background per frame, preventing residue
+                    // Frame disposal: 2 restores background to keep transparency clean
                     gif.addFrame(canvas, { delay: delay, dispose: 2 });
                 });
 
                 gif.on('finished', function(blob) {
+                    URL.revokeObjectURL(workerUrl);
                     downloadBlob(blob, 'sprite_animation.gif');
                     showToast('Transparent GIF exported!');
                 });
@@ -1136,7 +1143,7 @@
                 gif.render();
             } catch (err) {
                 console.error(err);
-                showToast('Failed to export GIF');
+                showToast('Failed to export GIF: ' + err.message);
             }
         }
 
